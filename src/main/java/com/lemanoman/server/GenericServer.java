@@ -4,12 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+
 import java.io.*;
 import java.net.Socket;
 
 public class GenericServer {
-    final protected int PORT=6500;
-    public void sendString(Socket socket,String string) throws IOException {
+    final protected int PORT = 6050;
+
+    public void sendString(Socket socket, String string) throws IOException {
         //Send the message to the server
         OutputStream os = socket.getOutputStream();
         OutputStreamWriter osw = new OutputStreamWriter(os);
@@ -17,7 +19,7 @@ public class GenericServer {
         string = string + "\n";
         bw.write(string);
         bw.flush();
-        System.out.println("Message sent  : "+string);
+        System.out.println("Message sent  : " + string);
     }
 
     public String receiveString(Socket socket) throws IOException {
@@ -26,51 +28,51 @@ public class GenericServer {
         InputStreamReader isr = new InputStreamReader(is);
         BufferedReader br = new BufferedReader(isr);
         String message = br.readLine();
-        System.out.println("Message received  : " +message);
-        return  message;
+        System.out.println("Message received  : " + message);
+        return message;
     }
 
-    public void sendFile(Socket socket,String path) throws IOException {
-        System.out.println("Sending file  : " +path);
+    public void sendFile(Socket socket, String path) throws IOException {
+        OutputStream os = socket.getOutputStream();
+
+        System.out.println("Sending file  : " + path);
 
         File myFile = new File(path);
-        byte[] mybytearray = new byte[(int) myFile.length()];
+
 
         FileInputStream fis = new FileInputStream(myFile);
         BufferedInputStream bis = new BufferedInputStream(fis);
-        //bis.read(mybytearray, 0, mybytearray.length);
-
-        DataInputStream dis = new DataInputStream(bis);
-        dis.readFully(mybytearray, 0, mybytearray.length);
-
-        OutputStream os = socket.getOutputStream();
-        //Sending file data to the server
-        os.write(mybytearray, 0, mybytearray.length);
+        byte[] buffer = new byte[8192];
+        int b;
+        do {
+            b = bis.read(buffer);
+            os.write(buffer,0,b);
+        } while (b != -1);
+        fis.close();
+        bis.close();
         os.flush();
-
-        //Closing socket
-        os.close();
+        //os.close();
     }
 
-    public void receiveFile(Socket socket,String dest) throws IOException{
-        System.out.println("Receiving file at  : " +dest);
+    public void receiveFile(Socket socket, String dest) throws IOException {
+        System.out.println("Receiving file at  : " + dest);
 
         InputStream in = socket.getInputStream();
-        DataInputStream clientData = new DataInputStream(in);
-        int bytesRead;
-
-
-        OutputStream output = new FileOutputStream(dest);
-        long size = clientData.readLong();
-        byte[] buffer = new byte[1024];
-        while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
-            output.write(buffer, 0, bytesRead);
-            size -= bytesRead;
-        }
-        output.close();
+        FileOutputStream fos = new FileOutputStream(dest);
+        BufferedInputStream bis = new BufferedInputStream(in);
+        BufferedOutputStream bos = new BufferedOutputStream(fos);
+        byte[] buffer = new byte[8192];
+        int b;
+        do {
+            b = bis.read(buffer);
+            bos.write(buffer,0,b);
+        } while (b != -1);
+        fos.close();
+        bis.close();
+        //in.close();
     }
 
-    public void sendJson(Socket socket,ObjectNode node) throws IOException{
+    public void sendJson(Socket socket, ObjectNode node) throws IOException {
         String json = "{}";
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -78,13 +80,13 @@ public class GenericServer {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        sendString(socket,json);
+        sendString(socket, json);
     }
 
-    public ObjectNode receiveJson(Socket socket) throws IOException{
+    public ObjectNode receiveJson(Socket socket) throws IOException {
         String json = receiveString(socket);
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(json,ObjectNode.class);
+        return mapper.readValue(json, ObjectNode.class);
     }
 
 
