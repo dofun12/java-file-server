@@ -55,14 +55,14 @@ public class Client extends GenericServer {
     }
 
     public static void main(String[] args) throws IOException {
-        Client client = new Client("192.168.15.102");
+        Client client = new Client("192.168.15.104");
         try {
 
             ObjectMapper mapper = new ObjectMapper();
 
             //client.status();
             //client.getFile("/home/kevim/teste-server/bigfile.deb","/home/kevim/teste-client/bigfile.deb");
-            ObjectNode dirs = client.listFile("/mnt/usb/scavanger");
+            ObjectNode dirs = client.listFile("/opt/Datafiles/temp/bin2/");
             if (dirs.get("success").asBoolean(false)) {
                 ArrayNode array = mapper.convertValue(dirs.get("files"), ArrayNode.class);
                 for (JsonNode node : array) {
